@@ -1,4 +1,5 @@
 mod commands;
+mod handler;
 
 use serde::Deserialize;
 use std::fs;
@@ -6,12 +7,15 @@ use std::process::exit;
 use toml;
 
 use serenity::async_trait;
-use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::model::application::{Command, Interaction};
+use serenity::model::application::Interaction;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 
 struct Handler;
+#[macro_use]
+extern crate rust_i18n;
+i18n!("locales");
+
 
 #[derive(Deserialize)]
 struct Config {
@@ -22,47 +26,18 @@ struct Config {
 impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(command) = interaction {
-            println!("Received command interaction: {command:#?}");
-
-            let content = match command.data.name.as_str() {
-                "ping" => Some(commands::ping::run(&command.data.options())),
-                _ => Some("not implemented :(".to_string()),
-            };
-
-            if let Some(content) = content {
-                let data = CreateInteractionResponseMessage::new().content(content);
-                let builder = CreateInteractionResponse::Message(data);
-                if let Err(why) = command.create_response(&ctx.http, builder).await {
-                    println!("Cannot respond to slash command: {why}");
-                }
-            }
+            handler::interaction::slash_commands(ctx, command).await;
         }
     }
-
+    
     async fn ready(&self, ctx: Context, ready: Ready) {
-        if let Some(shard) = ready.shard {
-            println!(
-                "{} is connected on shard {}/{}! guilds: {}",
-                ready.user.name,
-                shard.id,
-                shard.total,
-                ready.guilds.len()
-            );
-        }
-
-        let _ = Command::set_global_commands(
-            &ctx.http,
-            vec![
-                commands::wonderful_command::register(),
-                commands::ping::register(),
-            ],
-        )
-        .await;
+        handler::bot_ready::bot_ready(ctx, ready).await;
     }
 }
 
 #[tokio::main]
 async fn main() {
+    println!("{}", t!("slash_command.locales.name", locale = "en"));
     let config = load_config();
 
     let intents: GatewayIntents = GatewayIntents::GUILD_MESSAGES
