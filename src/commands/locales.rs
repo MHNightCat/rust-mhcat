@@ -1,4 +1,5 @@
-use rust_i18n::t;
+use crate::utils::slash_command_locales;
+
 use serenity::all::{CommandOptionType, CreateCommandOption};
 use serenity::builder::CreateCommand;
 use serenity::model::application::ResolvedOption;
@@ -8,33 +9,31 @@ pub fn run(_options: &[ResolvedOption]) -> String {
 }
 
 pub fn register() -> CreateCommand {
-    CreateCommand::new("set-language")
-        .name_localized("en-US", t!("slash_command.locales.name", locale = "en"))
+    let mut slash_command_option_locale = CreateCommandOption::new(
+        CommandOptionType::String,
+        "language",
+        "Language to change to",
+    )
+    .name("language")
+    // name localized
+    .description("Select a language")
+    .required(true);
+
+    slash_command_option_locale = slash_command_locales::slash_command_options_locales(
+        slash_command_option_locale,
+        "slash_command.locales.options.language.name".to_string(),
+        "slash_command.locales.options.language.description".to_string(),
+    );
+
+    let mut slash_command = CreateCommand::new("set-language")
         .description("Set MHCAT language")
-        .description_localized(
-            "en-US",
-            t!("slash_command.locales.description", locale = "en"),
-        )
-        .add_option(
-            CreateCommandOption::new(
-                CommandOptionType::String,
-                "language",
-                "Language to change to",
-            )
-            .name("language")
-            // name localized
-            .name_localized(
-                "en-US",
-                t!("slash_command.locales.options.language.name", locale = "en"),
-            )
-            .description("Select a language")
-            .description_localized(
-                "en-US",
-                t!(
-                    "slash_command.locales.options.language.description",
-                    locale = "en"
-                ),
-            )
-            .required(true),
-        )
+        .add_option(slash_command_option_locale);
+
+    slash_command = slash_command_locales::slash_command_locales(
+        slash_command,
+        "slash_command.locales.name".to_string(),
+        "slash_command.locales.description".to_string(),
+    );
+
+    return slash_command;
 }

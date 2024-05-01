@@ -1,5 +1,6 @@
 mod commands;
 mod handler;
+mod utils;
 
 use serde::Deserialize;
 use std::fs;
@@ -14,7 +15,7 @@ use serenity::prelude::*;
 struct Handler;
 #[macro_use]
 extern crate rust_i18n;
-i18n!("locales");
+i18n!("locales", fallback = "en");
 
 
 #[derive(Deserialize)]
@@ -37,7 +38,6 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-    println!("{}", t!("slash_command.locales.name", locale = "en"));
     let config = load_config();
 
     let intents: GatewayIntents = GatewayIntents::GUILD_MESSAGES
